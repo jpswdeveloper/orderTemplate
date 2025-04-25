@@ -5,7 +5,7 @@ import {
   type MRT_ColumnDef
 } from "material-react-table";
 import { Box, Typography, Chip, Link } from "@mui/material";
-import axios from 'axios'
+import axios from "axios";
 import { Check, Schedule } from "@mui/icons-material";
 import DetailPanel from "./DetailPanel";
 import { useNavigate } from "react-router-dom";
@@ -40,84 +40,44 @@ type Order = {
   status: "Calculator Only" | "Pending";
   created?: string;
   email?: string;
-  details: OrderItem[];
+  materialDetails: OrderItem[];
 };
 
-// const data: Order[] = [
-//   {
-//     id: 7,
-//     price: 12.09,
-//     name: "dfgsadfg dsfh",
-//     phone: "+48346346342",
-//     address: "fdghfgi, Poland 🇵🇱",
-//     vat: "",
-//     updated: "20:05, 25 Jan, 25",
-//     status: "Pending",
-//     created: "20:04, 25 Jan, 25",
-//     email: "glywinski@gmail.com",
-//     details: [
-//       {
-//         id: "#1",
-//         material: "Steel S235 / 1.0038",
-//         thickness: "6.0 mm",
-//         dimensions: "182.5 mm x 45.74 mm",
-//         surface: "0.0083 x 41.958",
-//         surfaceCost: "0.35",
-//         cutting: "0.7016 x 0.932",
-//         cuttingCost: "0.65",
-//         loops: "5 x 0.098",
-//         loopCost: "0.49",
-//         setupPrice: "3.27",
-//         unitPrice: "4.76",
-//         qty: "1 x 4.76",
-//         file: "blotnik2_ver3.dxf"
-//       },
-//       {
-//         id: "#2",
-//         material: "Steel S235 / 1.0038",
-//         thickness: "6.0 mm",
-//         dimensions: "219.17 mm x 68.78 mm",
-//         surface: "0.0151 x 41.958",
-//         surfaceCost: "0.63",
-//         cutting: "0.7326 x 0.932",
-//         cuttingCost: "0.68",
-//         loops: "5 x 0.098",
-//         loopCost: "0.49",
-//         setupPrice: "3.27",
-//         unitPrice: "5.07",
-//         qty: "1 x 5.07",
-//         file: "blotnik2_verA7.dxf"
-//       }
-//     ]
-//   }
-// ];
-
-
 const OrdersTable = () => {
-  const [data, setData] = useState<Order[]>([]); 
-    const isAuthenticated = localStorage.getItem('authenticated') === 'true';
+  const [data, setData] = useState<Order[]>([]);
+  const isAuthenticated = localStorage.getItem("authenticated") === "true";
+  const [rowCount, setRowCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
 
   useEffect(() => {
     const fetchOrders = async () => {
+      setIsLoading(true);
       try {
-        const response = await axios.get("/api/api/orders");
-        setData(response.data);  
+        const response = await axios.get("/api/api/orders", {
+          params: {
+            page: pagination.pageIndex + 1,
+            limit: pagination.pageSize
+          }
+        });
+        setData(response.data.orders);
+        setRowCount(response.data.total);
       } catch (error) {
         console.error("Error fetching orders:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchOrders();
-  }, []);
-  console.log('orders data',data)
+  }, [pagination]);
+  console.log("orders data", data);
   const columns = useMemo<MRT_ColumnDef<Order>[]>(
     () => [
       {
         accessorKey: "id",
         header: "ID",
-        Cell: ({ row }) => (
-          <Box fontWeight="bold">#{row.original._id}</Box>
-        )
+        Cell: ({ row }) => <Box fontWeight="bold">#{row.original._id}</Box>
       },
       {
         accessorKey: "price",
@@ -180,6 +140,11 @@ const OrdersTable = () => {
     columns,
     data,
     enableExpandAll: false,
+    manualPagination: true,
+    rowCount,
+    state: { pagination },
+    onPaginationChange: setPagination,
+    enablePagination: true,
     renderDetailPanel: ({ row }) => (
       <Box p={2} sx={{ backgroundColor: "#f8f9fa" }}>
         <DetailPanel order={row.original} />
@@ -189,13 +154,13 @@ const OrdersTable = () => {
     muiTableContainerProps: {
       sx: {
         height: "400px",
-        overflow: "auto",
+        overflow: "auto"
       }
     },
 
     muiTablePaperProps: {
       sx: {
-        height: "100%", // Ensure the paper takes full height
+        height: "100%",
         display: "flex",
         flexDirection: "column"
       }
@@ -209,7 +174,7 @@ const OrdersTable = () => {
   return (
     <Box
       sx={{
-        display: "flex",
+        display: "flex"
       }}
     >
       <MaterialReactTable table={table} />
